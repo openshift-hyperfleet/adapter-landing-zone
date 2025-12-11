@@ -1,0 +1,33 @@
+# Local Development Broker Configuration
+# Uses envsubst for environment variable substitution
+# Run with: ./run-local.sh
+
+broker:
+  type: googlepubsub
+
+  googlepubsub:
+    project_id: "${GCP_PROJECT_ID}"
+    topic: "${BROKER_TOPIC}"
+    subscription: "${BROKER_SUBSCRIPTION_ID}"
+
+    # Subscription settings
+    ack_deadline_seconds: 60
+    message_retention_duration: "604800s"
+    expiration_ttl: "2678400s"
+    enable_message_ordering: false
+    retry_min_backoff: "10s"
+    retry_max_backoff: "600s"
+
+    # Receive settings
+    max_outstanding_messages: 1000
+    max_outstanding_bytes: 104857600
+    num_goroutines: 10
+
+    # Behavior flags
+    create_topic_if_missing: false
+    create_subscription_if_missing: false
+
+subscriber:
+  parallelism: ${SUBSCRIBER_PARALLELISM:-1}
+
+log_config: false
