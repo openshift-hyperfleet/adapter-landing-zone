@@ -1,0 +1,77 @@
+🚀 Landing Zone Adapter deployed successfully!
+
+=============================================================================
+DEPLOYMENT SUMMARY
+=============================================================================
+
+  Release:    {{ .Release.Name }}
+  Namespace:  {{ .Release.Namespace }}
+  Image:      {{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+
+=============================================================================
+CONFIGURATION
+=============================================================================
+
+  Broker Type:    {{ .Values.broker.type | default "googlepubsub" }}
+{{- if eq .Values.broker.type "googlepubsub" }}
+  Project ID:     {{ .Values.broker.googlepubsub.projectId }}
+  Topic:          {{ .Values.broker.googlepubsub.topic }}
+  Subscription:   {{ .Values.broker.googlepubsub.subscription }}
+{{- end }}
+{{- if .Values.hyperfleetApi.baseUrl }}
+  API Base URL:   {{ .Values.hyperfleetApi.baseUrl }}
+{{- end }}
+
+{{- if and (eq .Values.broker.type "googlepubsub") .Values.broker.googlepubsub.projectId }}
+
+=============================================================================
+⚠️  GCP WORKLOAD IDENTITY SETUP
+=============================================================================
+
+Grant Pub/Sub permissions to the Kubernetes Service Account using direct
+principal binding (no Google Service Account needed):
+
+1. Get project number and set up IAM bindings:
+
+   PROJECT_NUMBER=$(gcloud projects describe {{ .Values.broker.googlepubsub.projectId }} --format="value(projectNumber)")
+
+   # Grant subscriber permission
+   gcloud projects add-iam-policy-binding {{ .Values.broker.googlepubsub.projectId }} \
+     --role="roles/pubsub.subscriber" \
+     --member="principal://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/{{ .Values.broker.googlepubsub.projectId }}.svc.id.goog/subject/ns/{{ .Release.Namespace }}/sa/{{ include "landing-zone.serviceAccountName" . }}" \
+     --condition=None
+
+   # Grant viewer permission (required to read subscription metadata)
+   gcloud projects add-iam-policy-binding {{ .Values.broker.googlepubsub.projectId }} \
+     --role="roles/pubsub.viewer" \
+     --member="principal://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/{{ .Values.broker.googlepubsub.projectId }}.svc.id.goog/subject/ns/{{ .Release.Namespace }}/sa/{{ include "landing-zone.serviceAccountName" . }}" \
+     --condition=None
+
+2. Wait for IAM propagation (1-2 minutes), then restart the deployment:
+
+   # Wait until permissions are propagated
+   echo "Waiting for IAM propagation..."
+   while ! gcloud pubsub subscriptions describe {{ .Values.broker.googlepubsub.subscription }} \
+     --project={{ .Values.broker.googlepubsub.projectId }} &>/dev/null; do
+     echo "  Waiting for permissions to propagate..."
+     sleep 10
+   done
+   echo "Permissions propagated!"
+
+   # Restart deployment
+   kubectl rollout restart deployment/{{ include "landing-zone.fullname" . }} -n {{ .Release.Namespace }}
+
+{{- end }}
+
+=============================================================================
+VERIFY DEPLOYMENT
+=============================================================================
+
+Check pod status:
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+View logs:
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} -f
+
+Check ConfigMaps:
+  kubectl get configmap -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}

@@ -1,0 +1,77 @@
+# Landing Zone Adapter - Helm Values
+#
+# Only environment-specific settings are exposed here.
+# For advanced customization, modify the templates directly.
+
+replicaCount: 1
+
+image:
+  registry: quay.io/openshift-hyperfleet
+  repository: hyperfleet-adapter
+  pullPolicy: Always
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  # Annotations (optional, only needed for legacy GSA-based Workload Identity)
+  # Modern approach uses direct principal binding - no annotation needed
+  # Legacy: iam.gke.io/gcp-service-account: GSA_NAME@PROJECT_ID.iam.gserviceaccount.com
+  annotations: {}
+  name: ""
+
+rbac:
+  create: false
+  namespaceAdmin: false
+
+# Logging configuration
+logging:
+  # Verbosity level (0-10, higher = more verbose)
+  verbosity: 2
+  # Log to stderr instead of files
+  logtostderr: true
+
+# Platform-specific scheduling
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Broker configuration
+# Set type to enable broker (required for adapter to function)
+broker:
+  type: ""  # "googlepubsub" or "rabbitmq"
+
+  # Google Pub/Sub (required when type: googlepubsub)
+  googlepubsub:
+    projectId: ""
+    topic: ""
+    subscription: ""
+    deadLetterTopic: ""  # Optional
+
+  # RabbitMQ (required when type: rabbitmq)
+  rabbitmq:
+    url: ""  # amqp://user:pass@host:5672/
+
+  subscriber:
+    parallelism: 1
+
+  # Raw YAML override (bypasses structured config above)
+  yaml: ""
+
+# HyperFleet API
+hyperfleetApi:
+  baseUrl: ""
+  version: "v1"
+
+# Additional environment variables
+env: []
+  # - name: MY_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: key

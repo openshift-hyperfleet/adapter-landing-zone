@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "landing-zone.configMapName" . }}
+  labels:
+    {{- include "landing-zone.labels" . | nindent 4 }}
+    app.kubernetes.io/component: adapter
+data:
+  # Adapter configuration file
+  # Edit charts/configs/adapter-landing-zone.yaml to customize
+  adapter.yaml: |
+{{ .Files.Get "configs/adapter-landing-zone.yaml" | nindent 4 }}
