@@ -1,0 +1,17 @@
+apiVersion: v2
+name: landing-zone
+description: HyperFleet Landing Zone Adapter - Event-driven adapter for HyperFleet cluster provisioning
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+maintainers:
+  - name: HyperFleet Team
+    email: hyperfleet-team@redhat.com
+keywords:
+  - hyperfleet
+  - adapter
+  - landing-zone
+  - cloudevents
+  - kubernetes
+home: https://github.com/openshift-hyperfleet/adapter-landing-zone
+

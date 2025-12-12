@@ -1,0 +1,27 @@
+{{- if .Values.config.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "landing-zone.configMapName" . }}
+  labels:
+    {{- include "landing-zone.labels" . | nindent 4 }}
+    app.kubernetes.io/component: adapter
+data:
+  {{- if .Values.config.adapterType }}
+  # Adapter type identifier (framework uses this to select the right client)
+  ADAPTER_TYPE: {{ .Values.config.adapterType | quote }}
+  {{- end }}
+  {{- if .Values.config.env }}
+  {{- range $key, $value := .Values.config.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+  # Adapter configuration file
+  # Priority: 1) config.adapterYaml value, 2) bundled configs/adapter-landing-zone.yaml
+  adapter.yaml: |
+  {{- if .Values.config.adapterYaml }}
+{{ .Values.config.adapterYaml | indent 4 }}
+  {{- else }}
+{{ .Files.Get "configs/adapter-landing-zone.yaml" | indent 4 }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,65 @@
+🚀 Landing Zone Adapter deployed successfully!
+
+{{- $saAnnotation := index .Values.serviceAccount.annotations "iam.gke.io/gcp-service-account" }}
+
+=============================================================================
+DEPLOYMENT SUMMARY
+=============================================================================
+
+  Release:    {{ .Release.Name }}
+  Namespace:  {{ .Release.Namespace }}
+  Image:      {{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+
+=============================================================================
+CONFIGURATION
+=============================================================================
+
+  Broker Type:    {{ .Values.broker.type | default "googlepubsub" }}
+{{- if eq .Values.broker.type "googlepubsub" }}
+  Project ID:     {{ .Values.broker.googlepubsub.projectId }}
+  Topic:          {{ .Values.broker.googlepubsub.topic }}
+  Subscription:   {{ .Values.broker.googlepubsub.subscription }}
+{{- end }}
+{{- if .Values.hyperfleetApi.baseUrl }}
+  API Base URL:   {{ .Values.hyperfleetApi.baseUrl }}
+{{- end }}
+
+{{- if $saAnnotation }}
+
+=============================================================================
+⚠️  GCP WORKLOAD IDENTITY SETUP REQUIRED
+=============================================================================
+
+The ServiceAccount is annotated for Workload Identity:
+  KSA: {{ include "landing-zone.serviceAccountName" . }}
+  GSA: {{ $saAnnotation }}
+
+Run this command to allow the KSA to impersonate the GSA:
+
+  gcloud iam service-accounts add-iam-policy-binding \
+    {{ $saAnnotation }} \
+    --role="roles/iam.workloadIdentityUser" \
+    --member="serviceAccount:{{ .Values.broker.googlepubsub.projectId }}.svc.id.goog[{{ .Release.Namespace }}/{{ include "landing-zone.serviceAccountName" . }}]"
+
+Also ensure the GSA has Pub/Sub permissions:
+
+  gcloud projects add-iam-policy-binding {{ .Values.broker.googlepubsub.projectId }} \
+    --member="serviceAccount:{{ $saAnnotation }}" \
+    --role="roles/pubsub.subscriber"
+
+{{- end }}
+
+=============================================================================
+VERIFY DEPLOYMENT
+=============================================================================
+
+Check pod status:
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+View logs:
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} -f
+
+Check ConfigMaps:
+  kubectl get configmap -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+
