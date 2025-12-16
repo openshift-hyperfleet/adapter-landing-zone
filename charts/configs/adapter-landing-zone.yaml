@@ -89,6 +89,7 @@ spec:
         kind: Namespace
         metadata:
           name: "{{ .clusterId | lower }}"
+          # name: "{{ .clusterId }}"
           labels:
             hyperfleet.io/cluster-id: "{{ .clusterId }}"
             hyperfleet.io/managed-by: "landing-zone-adapter"

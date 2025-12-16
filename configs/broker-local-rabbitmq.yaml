@@ -1,0 +1,18 @@
+# Local Development Broker Configuration - RabbitMQ
+# Uses envsubst for environment variable substitution
+# Run with: BROKER_TYPE=rabbitmq ./run-local.sh
+
+broker:
+  type: rabbitmq
+
+  rabbitmq:
+    url: "${RABBITMQ_URL:?RABBITMQ_URL must be set in .env}"
+    exchange_type: topic
+    prefetch_count: 10
+    publisher_confirm: false
+
+subscriber:
+  parallelism: ${SUBSCRIBER_PARALLELISM:-1}
+
+log_config: false
+
