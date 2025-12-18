@@ -6,8 +6,9 @@
 #   make helm-template     - Render helm templates
 #   make helm-test         - Run all helm tests
 
-.PHONY: help helm-lint helm-template helm-template-broker helm-template-rabbitmq helm-test helm-dry-run helm-package \
-        helm-template-full test-helm \
+.PHONY: help test test-helm \
+        helm-lint helm-template helm-template-broker helm-template-rabbitmq helm-test helm-dry-run helm-package \
+        helm-template-full \
         helm-install helm-upgrade helm-uninstall helm-status \
         run-local validate-adapter-yaml validate
 
@@ -25,6 +26,13 @@ NC := \033[0m # No Color
 
 help: ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Testing
+
+test: ## Run all tests (placeholder for pre-submit jobs)
+	@echo "$(GREEN)Running tests...$(NC)"
+	@echo "No tests configured yet. This is a placeholder to unblock pre-submit jobs."
+	@exit 0
 
 ##@ Helm Chart Testing
 
