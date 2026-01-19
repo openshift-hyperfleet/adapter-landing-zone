@@ -89,7 +89,6 @@ spec:
         kind: Namespace
         metadata:
           name: "{{ .clusterId | lower }}"
-          # name: "{{ .clusterId }}"
           labels:
             hyperfleet.io/cluster-id: "{{ .clusterId }}"
             hyperfleet.io/managed-by: "landing-zone-adapter"
@@ -101,6 +100,35 @@ spec:
         bySelectors:
           labelSelector:
             hyperfleet.io/resource-type: "namespace"
+            hyperfleet.io/cluster-id: "{{ .clusterId }}"
+            hyperfleet.io/managed-by: "landing-zone-adapter"
+
+    # ==========================================================================
+    # Resource: GCP Service Account
+    # ==========================================================================
+    # KSA for customer GCP authentication using principalSet. Customer grants
+    # permissions once, allowing all KSAs in all clusters to access their
+    # resources.
+    #
+    # principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/*
+    - name: "gcpServiceAccount"
+      manifest:
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: "landing-zone-adapter-task"
+          namespace: "{{ .clusterId | lower }}"
+          labels:
+            hyperfleet.io/cluster-id: "{{ .clusterId }}"
+            hyperfleet.io/managed-by: "landing-zone-adapter"
+            hyperfleet.io/resource-type: "serviceaccount"
+          annotations:
+            hyperfleet.io/created-by: "hyperfleet-adapter"
+            hyperfleet.io/generation: "{{ .generationId }}"
+      discovery:
+        bySelectors:
+          labelSelector:
+            hyperfleet.io/resource-type: "serviceaccount"
             hyperfleet.io/cluster-id: "{{ .clusterId }}"
             hyperfleet.io/managed-by: "landing-zone-adapter"
 
@@ -162,12 +190,19 @@ spec:
           
           data:
             namespace:
-              name: 
+              name:
                 expression: |
                   resources.?clusterNamespace.?metadata.?name.orValue("")
               status:
                 expression: |
                   resources.?clusterNamespace.?status.?phase.orValue("")
+            serviceAccount:
+              name:
+                expression: |
+                  resources.?gcpServiceAccount.?metadata.?name.orValue("")
+              namespace:
+                expression: |
+                  resources.?gcpServiceAccount.?metadata.?namespace.orValue("")
     # ============================================================================
     # Post Actions
     # ============================================================================

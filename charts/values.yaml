@@ -23,10 +23,6 @@ serviceAccount:
   annotations: {}
   name: ""
 
-rbac:
-  create: false
-  namespaceAdmin: false
-
 # Logging configuration
 logging:
   # Log level: debug, info, warn, error
