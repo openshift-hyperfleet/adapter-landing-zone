@@ -399,8 +399,6 @@ image:
 
 serviceAccount:
   create: true
-  annotations:
-    iam.gke.io/gcp-service-account: adapter@my-project.iam.gserviceaccount.com
 
 rbac:
   create: true
