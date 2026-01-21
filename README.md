@@ -11,6 +11,7 @@ Event-driven adapter for HyperFleet cluster provisioning. Handles environment pr
 - [Configuration](#configuration)
 - [Examples](#examples)
 - [GCP Workload Identity Setup](#gcp-workload-identity-setup)
+- [Customer GCP Project Authentication](#customer-gcp-project-authentication)
 - [Notes](#notes)
 
 ## Prerequisites
@@ -198,10 +199,10 @@ All configurable parameters are in `values.yaml`. For advanced customization, mo
 | `serviceAccount.create` | Create ServiceAccount | `true` |
 | `serviceAccount.name` | ServiceAccount name (auto-generated if empty) | `""` |
 | `serviceAccount.annotations` | ServiceAccount annotations (for Workload Identity) | `{}` |
-| `rbac.create` | Create ClusterRole and ClusterRoleBinding | `false` |
-| `rbac.namespaceAdmin` | Grant namespace admin permissions | `false` |
 
-When `rbac.namespaceAdmin=true`, the adapter gets full access to:
+RBAC resources (ClusterRole and ClusterRoleBinding) are **always created** with full namespace admin permissions and cannot be disabled. This ensures the adapter has the necessary permissions to function.
+
+The adapter is granted full access to:
 - Namespaces (create, update, delete)
 - Core resources (configmaps, secrets, serviceaccounts, services, pods, PVCs)
 - Apps (deployments, statefulsets, daemonsets, replicasets)
@@ -230,6 +231,8 @@ When `rbac.namespaceAdmin=true`, the adapter gets full access to:
 The adapter config is always created from `charts/configs/adapter-landing-zone.yaml`:
 - Mounted at `/etc/adapter/adapter.yaml`
 - Exposed via `ADAPTER_CONFIG_PATH` environment variable
+
+The adapter creates cluster namespaces using cluster ID and GCP service account for principal authentication.
 
 To customize, edit `charts/configs/adapter-landing-zone.yaml` directly.
 
@@ -358,9 +361,7 @@ helm install landing-zone ./charts/ \
   --set broker.googlepubsub.projectId=my-gcp-project \
   --set broker.googlepubsub.topic=my-topic \
   --set broker.googlepubsub.subscription=my-subscription \
-  --set hyperfleetApi.baseUrl=https://api.hyperfleet.example.com \
-  --set rbac.create=true \
-  --set rbac.namespaceAdmin=true
+  --set hyperfleetApi.baseUrl=https://api.hyperfleet.example.com
 ```
 
 ### With Custom Logging
@@ -399,12 +400,6 @@ image:
 
 serviceAccount:
   create: true
-  annotations:
-    iam.gke.io/gcp-service-account: adapter@my-project.iam.gserviceaccount.com
-
-rbac:
-  create: true
-  namespaceAdmin: true
 
 logging:
   level: debug
@@ -501,9 +496,7 @@ helm install landing-zone ./charts/ \
   --set broker.type=googlepubsub \
   --set broker.googlepubsub.projectId=MY_PROJECT \
   --set broker.googlepubsub.topic=MY_TOPIC \
-  --set broker.googlepubsub.subscription=MY_SUBSCRIPTION \
-  --set rbac.create=true \
-  --set rbac.namespaceAdmin=true
+  --set broker.googlepubsub.subscription=MY_SUBSCRIPTION
 ```
 
 > **Note:** Replace the following placeholders:
@@ -524,6 +517,27 @@ kubectl run -it --rm debug \
   --namespace=MY_NAMESPACE \
   -- gcloud auth list
 ```
+
+## Customer GCP Project Authentication
+
+The adapter creates a service account (`landing-zone-adapter-task`) in each landing zone namespace for accessing customer GCP resources. For the MVP, we use a simplified approach where the customer grants permissions to **all workloads** in the HyperFleet GCP project.
+
+### Setup for Customer Project
+
+The customer needs to grant IAM permissions **once** using `principalSet`, which allows all service accounts in all clusters within the `hcm-hyperfleet` project to access their resources.
+
+```bash
+gcloud projects add-iam-policy-binding ${CUSTOMER_PROJECT_ID} \
+  --member="principalSet://iam.googleapis.com/projects/275239757837/locations/global/workloadIdentityPools/hcm-hyperfleet.svc.id.goog/*" \
+  --role="roles/${ROLE_NAME}"
+```
+
+Where:
+- `${CUSTOMER_PROJECT_ID}` = Customer's GCP project ID
+- `275239757837` = HyperFleet project number for hcm-hyperfleet
+- `hcm-hyperfleet.svc.id.goog` = HyperFleet workload identity pool
+- `${ROLE_NAME}` = GCP IAM role name (e.g., `pubsub.subscriber`, `compute.viewer`)
+
 
 ## Notes
 
