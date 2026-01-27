@@ -17,9 +17,6 @@ fullnameOverride: ""
 
 serviceAccount:
   create: true
-  # Annotations (optional, only needed for legacy GSA-based Workload Identity)
-  # Modern approach uses direct principal binding - no annotation needed
-  # Legacy: iam.gke.io/gcp-service-account: GSA_NAME@PROJECT_ID.iam.gserviceaccount.com
   annotations: {}
   name: ""
 

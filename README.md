@@ -40,7 +40,7 @@ Run the adapter locally for development and testing.
 cp env.example .env
 ```
 
-2. Edit `.env` with your configuration:
+1. Edit `.env` with your configuration:
 
 ```bash
 # Required for Google Pub/Sub (default)
@@ -59,14 +59,14 @@ HYPERFLEET_API_VERSION="v1"
 # RABBITMQ_URL="amqp://guest:guest@localhost:5672/"
 ```
 
-3. Set up GCP authentication (see [GCP Authentication](#gcp-authentication) for detailed steps):
+1. Set up GCP authentication (see [GCP Authentication](#gcp-authentication) for detailed steps):
 
 ```bash
 # Create service account key and set in .env
 export GOOGLE_APPLICATION_CREDENTIALS="./sa-key.json"
 ```
 
-4. Connect to your GKE cluster (required for the adapter to apply Kubernetes resources):
+1. Connect to your GKE cluster (required for the adapter to apply Kubernetes resources):
 
 ```bash
 # Get credentials for your GKE cluster (using variables from .env)
@@ -92,6 +92,7 @@ BROKER_TYPE=rabbitmq CONTAINER_RUNTIME=docker make run-local
 ```
 
 The script will:
+
 - Auto-source `.env` if it exists
 - Verify `hyperfleet-adapter` is installed
 - Validate required environment variables
@@ -203,6 +204,7 @@ All configurable parameters are in `values.yaml`. For advanced customization, mo
 RBAC resources (ClusterRole and ClusterRoleBinding) are **always created** with full namespace admin permissions and cannot be disabled. This ensures the adapter has the necessary permissions to function.
 
 The adapter is granted full access to:
+
 - Namespaces (create, update, delete)
 - Core resources (configmaps, secrets, serviceaccounts, services, pods, PVCs)
 - Apps (deployments, statefulsets, daemonsets, replicasets)
@@ -229,6 +231,7 @@ The adapter is granted full access to:
 ### Adapter Configuration
 
 The adapter config is always created from `charts/configs/adapter-landing-zone.yaml`:
+
 - Mounted at `/etc/adapter/adapter.yaml`
 - Exposed via `ADAPTER_CONFIG_PATH` environment variable
 
@@ -271,6 +274,7 @@ Other Pub/Sub settings (ack deadline, retention, goroutines, etc.) are configure
 Other RabbitMQ settings (exchange type, prefetch count, etc.) are configured with sensible defaults in the broker config template.
 
 When `broker.type` is set:
+
 - Generates `broker.yaml` from structured values
 - Creates ConfigMap with `broker.yaml` key
 - Mounts at `/etc/broker/broker.yaml`
@@ -290,6 +294,7 @@ When `broker.type` is set:
 | `env` | Additional environment variables | `[]` |
 
 Example:
+
 ```yaml
 env:
   - name: MY_VAR
@@ -401,6 +406,10 @@ image:
 serviceAccount:
   create: true
 
+rbac:
+  create: true
+  namespaceAdmin: true
+
 logging:
   level: debug
   format: json
@@ -500,6 +509,7 @@ helm install landing-zone ./charts/ \
 ```
 
 > **Note:** Replace the following placeholders:
+>
 > - `MY_PROJECT` - Your GCP project ID
 > - `MY_PROJECT_NUMBER` - Your GCP project number (from Step 1)
 > - `MY_NAMESPACE` - Kubernetes namespace (e.g., `hyperfleet-system`)
@@ -533,11 +543,11 @@ gcloud projects add-iam-policy-binding ${CUSTOMER_PROJECT_ID} \
 ```
 
 Where:
+
 - `${CUSTOMER_PROJECT_ID}` = Customer's GCP project ID
 - `275239757837` = HyperFleet project number for hcm-hyperfleet
 - `hcm-hyperfleet.svc.id.goog` = HyperFleet workload identity pool
 - `${ROLE_NAME}` = GCP IAM role name (e.g., `pubsub.subscriber`, `compute.viewer`)
-
 
 ## Notes
 
